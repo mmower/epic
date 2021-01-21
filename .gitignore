@@ -25,3 +25,4 @@ epic-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+.iex.exs
