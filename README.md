@@ -81,6 +81,33 @@ that can convert parsed results into maps and records.
 Lastly, because Epic was created to parse a human authored format, some effort has been made to ensure that
 Epic parsers can be made to report human readbale error messages with useful positional information.
 
+## Progress
+
+I've implemented some basic parsing primitives so you can parse strings as well as some of the utility
+parsers like `choice` and `many`. However there are a number of problems:
+
+### chaining of parsers
+
+In NimbleParsec you can write:
+
+    string("{"}) |> identifier |> string("}") |>
+
+because all the combinators take another combinator as the first parameter and "chain" them along collecting
+the results. I'm not quite sure how to implement this in Epic. In particular it's about how results get
+stored and passed about in the context. I think what I've done needs re-thinking.
+
+### ignoring unwanted input
+
+NimbleParsec has the `ignore` combinator that discards any results. Much like the chaining problem above I'm not yet clear how to implement this in Epic. I think it requires rethinking what I am doing about results. In particular mostly I am trying to build AST structures so maybe first class support for this will help.
+
+### lookahead
+
+I never quite figured out lookahead using NimbleParsec and I'm not sure what to do about it here although I know it can be important.
+
+### efficiency
+
+NimbleParsec is fast. I expect Epic won't be. I will probably care about this last, if at all.
+
 ## Background
 
 I wanted a parser for a moderately complicated text format. I came across [NimbleParsec](https://github.com/dashbitco/nimble_parsec) which is a parser combinator library by the author of Elixir, José Valim.
