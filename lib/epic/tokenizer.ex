@@ -19,6 +19,11 @@ defmodule Epic.Tokenizer do
   def ascii_letter(), do: satisfy(char(), fn char -> char in ?a..?z or char in ?A..?Z end)
 
   @doc """
+  Matches a single space or tab characer
+  """
+  def whitespace(), do: satisfy(char(), fn char -> char == ?\s or char == ?\t end)
+
+  @doc """
   Matches a single new line character
   """
   def newline(), do: satisfy(char(), fn char -> char == ?\n end)
@@ -62,18 +67,6 @@ defmodule Epic.Tokenizer do
 
         <<char::utf8, rest::binary>> ->
           matches_char(ctx, char, rest)
-          # char_pos = inc(position, char == ?\n)
-          # updated_parsed = parsed <> <<char>>
-          # match = char_match(char, char_pos)
-
-          # %Context{
-          #   ctx
-          #   | :status => :ok,
-          #     :parsed => updated_parsed,
-          #     :match => match,
-          #     :input => rest,
-          #     :position => char_pos
-          # }
       end
     end
   end

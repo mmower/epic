@@ -14,6 +14,16 @@ defmodule Epic.TokenizerTest do
   @single_tilde string_ctx("~")
   @single_nl string_ctx("\n")
 
+  test "parses whitespace" do
+    parser = whitespace()
+
+    assert %Context{status: :error} = parser.(@empty_input)
+    assert %Context{status: :error} = parser.(@single_a)
+
+    assert %Context{status: :ok} = parser.(string_ctx(" "))
+    assert %Context{status: :ok} = parser.(string_ctx("\t"))
+  end
+
   test "parses a single character" do
     parser = char()
     assert %Context{status: :error} = parser.(@empty_input)
