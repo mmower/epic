@@ -3,16 +3,4 @@ defmodule Epic do
   Documentation for `Epic`.
   """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Epic.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
 end
