@@ -33,6 +33,10 @@ defmodule Epic.Position do
     end
   end
 
+  def line_col(%{line: line, column: column}) do
+    "L#{line}:#{column}"
+  end
+
   defimpl String.Chars do
     def to_string(position) do
       "%Position{byte_offset: #{position.byte_offset}, line: #{position.line}, column: #{position.column}}"

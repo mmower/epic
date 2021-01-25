@@ -86,19 +86,76 @@ Epic parsers can be made to report human readbale error messages with useful pos
 I've implemented some basic parsing primitives so you can parse strings as well as some of the utility
 parsers like `choice` and `many`. However there are a number of problems:
 
+### Error handling
+
+It's a stated ambition of Epic that generated parsers provide decent, human understandable, error messages
+when things go wrong. However, at the moment, that remains an ambition.
+
+The parser automatically maintains good line/column information which is a start.
+
 ### chaining of parsers
 
 In NimbleParsec you can write:
 
-    string("{"}) |> identifier |> string("}") |>
+    string("{"}) |> identifier |> string("}") |> …
 
 because all the combinators take another combinator as the first parameter and "chain" them along collecting
 the results. I'm not quite sure how to implement this in Epic. In particular it's about how results get
 stored and passed about in the context. I think what I've done needs re-thinking.
 
+My first approach to this problem has been to introduce the `sequence` parser which takes a list of
+parsers and applies them in turn. So you would write the above example as:
+
+    sequence([char(?{}), identifier(), char(?})])
+
+I think syntactically it's a wash as an example like:
+
+    act =
+        string("Act")
+        |> replace(:act)
+        |> ignore(whitespace)
+        |> concat(id)
+        |> ignore(whitespace)
+        |> ignore(obrace)
+        |> ignore(whitespace)
+        |> optional(attributes)
+        |> ignore(whitespace)
+        |> concat(scene)
+        |> repeat(ignore(whitespace) |> concat(scene))
+        |> ignore(whitespace)
+        |> ignore(cbrace)
+        |> wrap
+
+becomes
+
+    act = sequence([
+      literal("Act") |> replace(:act),
+      ignore(whitespace),
+      id,
+      ignore(whitespace),
+      ignore(obrace),
+      ignore(whitespace),
+      optional(attributes),
+      ignore(whitespace),
+      many(scene),
+      ignore(whitespace),
+      ignore(cbrace)
+    ])
+
+Note that, in some cases, it still makes sense to chain parsers although I don't think
+
+    replace(literal("Act"), :act)
+
+actually reads any worse.
+
+Under the hood `literal` is implemented using `sequence` and `char` by mapping characters of the string
+into equivalent char parsers strung together with sequence.
+
 ### ignoring unwanted input
 
 NimbleParsec has the `ignore` combinator that discards any results. Much like the chaining problem above I'm not yet clear how to implement this in Epic. I think it requires rethinking what I am doing about results. In particular mostly I am trying to build AST structures so maybe first class support for this will help.
+
+I am considering whether ignore could be implemented by a parser simply returns an empty match.
 
 ### lookahead
 

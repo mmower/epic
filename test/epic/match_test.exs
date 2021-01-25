@@ -11,9 +11,9 @@ defmodule Epic.MatchTest do
     assert %Match{term: ?a, position: ^pos} = char_match(?a, pos)
   end
 
-  test "construct list match" do
+  test "construct empty list match" do
     pos = beginning()
-    assert %Match{term: [], position: ^pos} = list_match(pos)
+    assert %Match{term: [], position: ^pos} = empty_match(pos)
   end
 
   test "stringify match" do
@@ -24,6 +24,11 @@ defmodule Epic.MatchTest do
   test "match to integer" do
     match = %Match{term: [?1, ?0, ?0, ?4, ?2], position: beginning()}
     assert %Match{term: 10042} = match |> intify
+  end
+
+  test "append to match" do
+    match = %Match{term: [?f, ?o, ?o, ?_], position: beginning()}
+    assert %Match{term: [?f, ?o, ?o, ?_, ?1]} = append(match, ?1)
   end
 
 end

@@ -7,19 +7,27 @@ defmodule Epic.Match do
 
   defstruct [:term, :position]
 
-  @doc """
-  Given a character and position returns a Match for that character at that position.
-  """
-  def char_match(char, %Position{} = position) do
-    %Epic.Match{term: char, position: position}
+  def empty_match(%Position{} = position), do: %Epic.Match{term: [], position: position}
+
+  def char_match(char, %Position{} = position), do: %Epic.Match{term: char, position: position}
+
+  def append(%Epic.Match{term: term} = match, item) when is_list(term) do
+    %{match | term: term ++ List.wrap(item)}
   end
 
-  @doc """
-  Given a position returns a Match for the empty list at that position.
-  """
-  def list_match(%Position{} = position) do
-    %Epic.Match{term: [], position: position}
-  end
+  # @doc """
+  # Given a character and position returns a Match for that character at that position.
+  # """
+  # def char_match(char, %Position{} = position) do
+  #   %Epic.Match{term: char, position: position}
+  # end
+
+  # @doc """
+  # Given a position returns a Match for the empty list at that position.
+  # """
+  # def list_match(%Position{} = position) do
+  #   %Epic.Match{term: [], position: position}
+  # end
 
   @doc """
   Given a Match with a term that can be converted into a string (principally a char or a

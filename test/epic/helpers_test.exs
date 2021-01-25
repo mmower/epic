@@ -47,4 +47,26 @@ defmodule Epic.HelpersTest do
     assert %{status: :ok, match: %{term: [?f, ?o, ?o]}} = parser.(string_ctx("oof"))
   end
 
+  test "parse literal" do
+    parser = literal("alpha")
+    assert %{status: :ok, match: %{term: [?a, ?l, ?p, ?h, ?a]}} = parser.(string_ctx("alpha"))
+  end
+
+  test "ignore match" do
+    parser = ignore(many(ascii_letter()))
+    assert %{status: :ok, match: nil} = parser.(string_ctx("alphabravo"))
+  end
+
+  test "parse sequence" do
+    parser = sequence([ascii_letter(), digit(), ascii_letter(), digit(), ascii_letter()])
+    assert %{status: :ok, match: %{term: [?f, ?1, ?o, ?2, ?o]}} = parser.(string_ctx("f1o2o"))
+  end
+
+  test "parse sequence of choices" do
+    parser = sequence([choice([ascii_letter(), digit()]), choice([ascii_letter(), digit()]), choice([ascii_letter(), digit()])])
+    assert %{status: :ok, match: %{term: [?f, ?1, ?o]}} = parser.(string_ctx("f1o"))
+    assert %{status: :ok, match: %{term: [?f, ?o, ?o]}} = parser.(string_ctx("foo"))
+    assert %{status: :ok, match: %{term: [?1, ?2, ?3]}} = parser.(string_ctx("123"))
+  end
+
 end
