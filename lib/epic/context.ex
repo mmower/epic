@@ -7,7 +7,9 @@ defmodule Epic.Context do
   """
   import Epic.Position, only: [beginning: 0]
 
-  defstruct [:status, :message, :parsed, :input, :position, :match, :annotation, :level]
+  defstruct [:status, :message, :parsed, :input, :position, :match]
+
+  @spec string_ctx(String.t()) :: %Epic.Context{}
 
   @doc """
   Returns a new Context initialised with the given string as an input.
@@ -19,9 +21,7 @@ defmodule Epic.Context do
       parsed: "",
       input: s,
       position: beginning(),
-      match: nil,
-      level: 0,
-      annotation: []
+      match: nil
     }
   end
 

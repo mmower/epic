@@ -5,7 +5,7 @@ defmodule Epic.Match do
   """
   alias Epic.Position
 
-  defstruct [:term, :position]
+  defstruct [:term, :position, :label]
 
   def empty_match(%Position{} = position), do: %Epic.Match{term: [], position: position}
 

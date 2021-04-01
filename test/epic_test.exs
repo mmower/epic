@@ -5,22 +5,21 @@ defmodule EpicTest do
   import Epic.Tokenizer
   import Epic.Helpers
   import Epic.Context, only: [string_ctx: 1]
-  import Epic.Logger, only: [log: 2, log_msg: 1]
 
   test "parses simple mathematical expression" do
-    plus = replace(char(?+), :+)
-    minus = replace(char(?-), :-)
-    times = replace(char(?*), :*)
-    divide = replace(char(?/), :/)
+    plus = label(replace(char(?+), :+), "+")
+    minus = label(replace(char(?-), :-), "-")
+    times = label(replace(char(?*), :*), "*")
+    divide = label(replace(char(?/), :/), "/")
 
-    operator = choice([plus, minus, times, divide], "parse operator +-*/")
-    int = integer(many(digit()))
-    expr = sequence([int, operator, int])
+    operator = label(choice([plus, minus, times, divide]), "oper")
+    int = label(integer(many(digit())), "int")
+    expr = label(sequence([int, operator, int]), "expr")
 
     ctx = string_ctx("1+2")
 
-    log_msg( "Running assertions" )
+    result = expr.(ctx)
 
-    assert %{status: :ok} = expr.(ctx)
+    assert %{status: :ok} = result
   end
 end
