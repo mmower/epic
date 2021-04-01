@@ -11,8 +11,8 @@ defmodule Epic.Match do
 
   def char_match(char, %Position{} = position), do: %Epic.Match{term: char, position: position}
 
-  def append(%Epic.Match{term: term} = match, item) when is_list(term) do
-    %{match | term: term ++ List.wrap(item)}
+  def append_term(%Epic.Match{term: term} = match, item) when is_list(term) do
+    %{match | term: [item | term]}
   end
 
   # @doc """

@@ -4,7 +4,7 @@ defmodule Epic.Helpers do
   transform/2, replace/2, map/2, collect/2.
   """
   alias Epic.{Context}
-  import Epic.Match, only: [empty_match: 1, append: 2]
+  import Epic.Match, only: [empty_match: 1, append_term: 2]
 
   @doc """
   The label parser labels the current matching value.
@@ -38,16 +38,18 @@ defmodule Epic.Helpers do
     end
   end
 
+  def reorder_matches(%{match: %{term: term} = match} = ctx) when is_list(term) do
+    %{ctx | match: %{match | term: Enum.reverse(term)}}
+  end
+
   defp sequence_parser(parsers, ctx) do
     case parsers do
       [] ->
-        ctx
+        reorder_matches(ctx)
 
       [parser | rest] ->
-        ctx2 = parser.(ctx)
-
-        with %{status: :ok, match: %{term: term}} <- ctx2 do
-          sequence_parser(rest, %{ctx2 | match: append(ctx.match, term)})
+        with %{status: :ok, match: %{term: term}} = parsed_ctx <- parser.(ctx) do
+          sequence_parser(rest, %{parsed_ctx | match: append_term(ctx.match, term)})
         end
     end
   end

@@ -27,8 +27,10 @@ defmodule Epic.MatchTest do
   end
 
   test "append to match" do
-    match = %Match{term: [?f, ?o, ?o, ?_], position: beginning()}
-    assert %Match{term: [?f, ?o, ?o, ?_, ?1]} = append(match, ?1)
+    # List matches are built in reverse, usually by sequence which
+    # reverses the list when it's done
+    match = %Match{term: [?_, ?o, ?o, ?f], position: beginning()}
+    assert %Match{term: [?1, ?_, ?o, ?o, ?f]} = append_term(match, ?1)
   end
 
 end
