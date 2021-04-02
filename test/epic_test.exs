@@ -15,7 +15,7 @@ defmodule EpicTest do
     operator = label(choice([plus, minus, times, divide]), "oper")
     int = label(integer(many(digit())), "int")
     expr = label(sequence([int, operator, int]), "expr")
-    parser = sequence([expr,eoi])
+    parser = sequence([expr,eoi()])
 
     ctx = string_ctx("1+2")
 
@@ -27,11 +27,9 @@ defmodule EpicTest do
   test "parses series of strings" do
     str = many(ascii_letter())
     comma = label(replace(char(?,), :comma), "comma")
-    strings = sequence([char(?"),sequence([str,many(sequence([comma,str]))]),char(?")])
-    parser = sequence([strings,eoi])
+    strings = sequence([str, many( sequence([comma, str]))])
+    parser = sequence([char(?"),strings,char(?"),eoi()])
     result = parser.(string_ctx("\"many,are,called,few,are,choosen\""))
-
-    IO.puts inspect(result)
     assert %{status: :ok} = result
   end
 end

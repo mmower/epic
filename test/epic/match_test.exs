@@ -13,7 +13,7 @@ defmodule Epic.MatchTest do
 
   test "construct empty list match" do
     pos = beginning()
-    assert %Match{term: [], position: ^pos} = empty_match(pos)
+    assert %Match{term: [], position: ^pos} = list_match(pos)
   end
 
   test "stringify match" do
@@ -30,7 +30,7 @@ defmodule Epic.MatchTest do
     # List matches are built in reverse, usually by sequence which
     # reverses the list when it's done
     match = %Match{term: [?_, ?o, ?o, ?f], position: beginning()}
-    assert %Match{term: [?1, ?_, ?o, ?o, ?f]} = append_term(match, ?1)
+    assert %Match{term: [?1, ?_, ?o, ?o, ?f]} = append_match(match, ?1)
   end
 
 end

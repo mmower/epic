@@ -7,12 +7,12 @@ defmodule Epic.Match do
 
   defstruct [:term, :position, :label]
 
-  def empty_match(%Position{} = position), do: %Epic.Match{term: [], position: position}
+  def list_match(%Position{} = position), do: %Epic.Match{term: [], position: position}
 
   def char_match(char, %Position{} = position), do: %Epic.Match{term: char, position: position}
 
-  def append_term(%Epic.Match{term: term} = match, item) when is_list(term) do
-    %{match | term: [item | term]}
+  def append_match(%Epic.Match{term: list} = match, new_match) when is_list(list) do
+    %{match | term: [new_match | list]}
   end
 
   # @doc """

@@ -4,7 +4,7 @@ defmodule Epic.Helpers do
   transform/2, replace/2, map/2, collect/2.
   """
   alias Epic.{Context}
-  import Epic.Match, only: [empty_match: 1, append_term: 2]
+  import Epic.Match, only: [list_match: 1, append_match: 2]
 
   @doc """
   The label parser labels the current matching value.
@@ -32,9 +32,9 @@ defmodule Epic.Helpers do
   The sequence parser takes a list of parsers and attempts to apply them in turn building a
   List match of results.
   """
-  def sequence(parsers) when is_list(parsers) do
+  def sequence(parsers, collapse \\ true) when is_list(parsers) do
     fn %Context{} = ctx ->
-      sequence_parser(parsers, %{ctx | match: empty_match(ctx.position)})
+      sequence_parser(parsers, %{ctx | match: list_match(ctx.position)}, collapse)
     end
   end
 
@@ -42,14 +42,17 @@ defmodule Epic.Helpers do
     %{ctx | match: %{match | term: Enum.reverse(term)}}
   end
 
-  defp sequence_parser(parsers, ctx) do
+  defp sequence_parser(parsers, ctx, collapse) do
     case parsers do
       [] ->
         reorder_matches(ctx)
 
       [parser | rest] ->
-        with %{status: :ok, match: %{term: term}} = parsed_ctx <- parser.(ctx) do
-          sequence_parser(rest, %{parsed_ctx | match: append_term(ctx.match, term)})
+        with %{status: :ok, match: match} = parsed_ctx <- parser.(ctx) do
+          case collapse do
+            true -> sequence_parser(rest, %{parsed_ctx | match: append_match(ctx.match, match.term)}, collapse)
+            false -> sequence_parser(rest, %{parsed_ctx | match: append_match(ctx.match, match)}, collapse)
+          end
         end
     end
   end
@@ -81,26 +84,25 @@ defmodule Epic.Helpers do
   Note that the many parser never fails and will return an empty list if it does not match.
   """
 
-  def many(parser) do
+  def many(parser, collapse \\ true) do
     fn %Context{} = ctx ->
       with %{status: :ok, match: %{term: list} = match} = result_ctx <-
-             many_parser(parser, %{ctx | match: empty_match(ctx.position)}) do
+             many_parser(parser, %{ctx | match: list_match(ctx.position)}, collapse) do
         %{result_ctx | match: %{match | term: Enum.reverse(list)}}
       end
     end
   end
 
-  defp many_parser(parser, %Context{} = ctx) do
+  defp many_parser(parser, %Context{} = ctx, collapse) do
     case parser.(ctx) do
       %{:status => :error} ->
         ctx
 
-      %{:status => :ok} = many_ctx ->
-        many_ctx = %{
-          many_ctx
-          | match: %{ctx.match | term: [many_ctx.match.term | ctx.match.term]}
-        }
-        many_parser(parser, many_ctx)
+      %{:status => :ok, match: many_match} = parsed_ctx ->
+        case collapse do
+          true -> many_parser(parser, %{parsed_ctx | match: append_match(ctx.match, many_match.term)}, collapse)
+          false -> many_parser(parser, %{parsed_ctx | match: append_match(ctx.match, many_match)}, collapse)
+        end
     end
   end
 
