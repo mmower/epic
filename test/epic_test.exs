@@ -32,4 +32,5 @@ defmodule EpicTest do
     result = parser.(string_ctx("\"many,are,called,few,are,choosen\""))
     assert %{status: :ok} = result
   end
+
 end

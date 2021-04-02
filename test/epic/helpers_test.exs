@@ -79,4 +79,11 @@ defmodule Epic.HelpersTest do
     assert %{status: :ok, match: %{term: [%Match{term: ?1}, %Match{term: ?2}, %Match{term: ?3}]}} = result
   end
 
+  test "parsing sequence (flattened)" do
+    comma = char(?,)
+    parser = flatten(sequence([digit(), many(sequence([comma, digit()]))]))
+    result = parser.(string_ctx("1,2,3"))
+    assert %{status: :ok, match: %{term: [?1, ?,, ?2, ?,, ?3]}} = result
+  end
+
 end

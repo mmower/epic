@@ -119,6 +119,17 @@ defmodule Epic.Helpers do
     end
   end
 
+  @doc """
+  The flatten/1 parser takes a parser and "flattens" it results.
+  """
+  def flatten(parser) do
+    fn %Context{} = ctx ->
+      with %Context{status: :ok, match: %{term: terms} = match} = new_ctx <- parser.(ctx) do
+        %{new_ctx | match: %{match | term: List.flatten(terms)}}
+      end
+    end
+  end
+
   # @doc """
   # The satisfy/2 parser takes a parser and an acceptor predicate and return a combinator that
   # calls the parser and succeeds if the acceptor predicate accepts the resulting term.
