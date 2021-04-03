@@ -31,6 +31,13 @@ defmodule Epic.Helpers do
   end
 
   @doc """
+  The exactly/2 parser requires the parser argument to match exactly n times
+  """
+  def times(parser, n) do
+    sequence(for _i <- 1..n, do: parser)
+  end
+
+  @doc """
   The sequence parser takes a list of parsers and attempts to apply them in turn building a
   list-Match of results. The optional parameter extract_terms controls whether the sequence
   returns a list of Match structrs or a list of terms extracted from matches.

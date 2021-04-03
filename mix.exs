@@ -4,11 +4,14 @@ defmodule Epic.MixProject do
   def project do
     [
       app: :epic,
-      version: "0.2.0",
+      version: "0.2.1",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "Epic",
+      description: description(),
+      package: package(),
+      source_url: "https://github.com/mmower/epic",
       docs: [main: "README", extras: ["README.md"]]
     ]
   end
@@ -17,6 +20,18 @@ defmodule Epic.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  def description do
+    "Epic is an Elixir parser combinator library."
+  end
+
+  def package do
+    [
+      name: "epic",
+      licenses: ["Apache-2.0"],
+      links: %{"Github" => "https://github.com/mmower/epic"}
     ]
   end
 

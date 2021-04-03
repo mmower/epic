@@ -106,4 +106,11 @@ defmodule Epic.HelpersTest do
     assert %{status: :ok, match: %{term: [?1, ?,, ?2, ?,, ?3]}} = result
   end
 
+  test "parse sequences with length" do
+    year = digit() |> times(4)
+    assert %{status: :error} = year.(string_ctx("202"))
+    assert %{status: :ok, match: %{term: [?2, ?0, ?2, ?1]}} = year.(string_ctx("20210"))
+    assert %{status: :ok, match: %{term: [?2, ?0, ?2, ?1]}} = year.(string_ctx("2021"))
+  end
+
 end
