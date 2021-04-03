@@ -51,12 +51,32 @@ defmodule Epic.HelpersTest do
 
   test "parse literal" do
     parser = literal("alpha")
-    assert %{status: :ok, match: %{term: [?a, ?l, ?p, ?h, ?a]}} = parser.(string_ctx("alpha"))
+    assert %{status: :ok, match: %{term: 'alpha'}} = parser.(string_ctx("alpha"))
   end
 
   test "ignore match" do
     parser = ignore(many(ascii_letter()))
-    assert %{status: :ok, match: nil} = parser.(string_ctx("alphabravo"))
+    assert %{status: :ok, match: %{term: nil}} = parser.(string_ctx("alphabravo"))
+  end
+
+  test "ignore inner match" do
+    foo = literal("foo")
+    bar = literal("bar")
+    baz = literal("baz")
+    parser = sequence([ignore(foo), bar, ignore(baz)])
+
+    result = parser.(string_ctx("foobarbaz"))
+    assert %{status: :ok, match: %{term: ['bar']}} = result
+  end
+
+  test "ignore separators" do
+    comma = char(?,)
+    parser = sequence([digit(), many(sequence([ignore(comma), digit()]))])
+    result = parser.(string_ctx("1,2,3,4,5"))
+
+    # Note that because of the use of sequence which returns a list we get
+    # each digit in a list so '2' rather than ?2
+    assert %{status: :ok, match: %{term: [?1,['2','3','4','5']]}} = result
   end
 
   test "parse sequence" do

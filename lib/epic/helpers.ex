@@ -4,7 +4,9 @@ defmodule Epic.Helpers do
   transform/2, replace/2, map/2, collect/2.
   """
   alias Epic.{Context}
-  import Epic.Match, only: [list_match: 1, append_match: 2]
+
+  import Epic.Match,
+    only: [list_match: 1, append_match: 2, ignore_match: 0, terms_in_parsed_order: 1]
 
   @doc """
   The label parser labels the current matching value.
@@ -23,35 +25,46 @@ defmodule Epic.Helpers do
   def ignore(parser) do
     fn %Context{} = ctx ->
       with %{status: :ok} = new_ctx <- parser.(ctx) do
-        %{new_ctx | match: ctx.match}
+        %{new_ctx | match: ignore_match()}
       end
     end
   end
 
   @doc """
   The sequence parser takes a list of parsers and attempts to apply them in turn building a
-  List match of results.
+  list-Match of results. The optional parameter extract_terms controls whether the sequence
+  returns a list of Match structrs or a list of terms extracted from matches.
   """
-  def sequence(parsers, collapse \\ true) when is_list(parsers) do
+  def sequence(parsers, extract_terms \\ true) when is_list(parsers) do
     fn %Context{} = ctx ->
-      sequence_parser(parsers, %{ctx | match: list_match(ctx.position)}, collapse)
+      sequence_parser(parsers, %{ctx | match: list_match(ctx.position)}, extract_terms)
     end
   end
 
-  def reorder_matches(%{match: %{term: term} = match} = ctx) when is_list(term) do
-    %{ctx | match: %{match | term: Enum.reverse(term)}}
-  end
-
-  defp sequence_parser(parsers, ctx, collapse) do
+  defp sequence_parser(parsers, ctx, extract_terms) do
     case parsers do
       [] ->
-        reorder_matches(ctx)
+        %{ctx | match: terms_in_parsed_order(ctx.match)}
 
       [parser | rest] ->
-        with %{status: :ok, match: match} = parsed_ctx <- parser.(ctx) do
-          case collapse do
-            true -> sequence_parser(rest, %{parsed_ctx | match: append_match(ctx.match, match.term)}, collapse)
-            false -> sequence_parser(rest, %{parsed_ctx | match: append_match(ctx.match, match)}, collapse)
+        with %{status: :ok, match: %{term: term} = match} = parsed_ctx <- parser.(ctx) do
+          if term == nil do
+            # A nil term means the ignore() parser has been used to elide this from the output terms
+            sequence_parser(rest, %{parsed_ctx | match: ctx.match}, extract_terms)
+          else
+            if extract_terms do
+              sequence_parser(
+                rest,
+                %{parsed_ctx | match: append_match(ctx.match, match.term)},
+                extract_terms
+              )
+            else
+              sequence_parser(
+                rest,
+                %{parsed_ctx | match: append_match(ctx.match, match)},
+                extract_terms
+              )
+            end
           end
         end
     end
@@ -84,24 +97,37 @@ defmodule Epic.Helpers do
   Note that the many parser never fails and will return an empty list if it does not match.
   """
 
-  def many(parser, collapse \\ true) do
+  def many(parser, extract_terms \\ true) do
     fn %Context{} = ctx ->
-      with %{status: :ok, match: %{term: list} = match} = result_ctx <-
-             many_parser(parser, %{ctx | match: list_match(ctx.position)}, collapse) do
-        %{result_ctx | match: %{match | term: Enum.reverse(list)}}
+      with %{status: :ok, match: match} = result_ctx <-
+             many_parser(parser, %{ctx | match: list_match(ctx.position)}, extract_terms) do
+        %{result_ctx | match: terms_in_parsed_order(match)}
       end
     end
   end
 
-  defp many_parser(parser, %Context{} = ctx, collapse) do
+  defp many_parser(parser, %Context{} = ctx, extract_terms) do
     case parser.(ctx) do
       %{:status => :error} ->
         ctx
 
-      %{:status => :ok, match: many_match} = parsed_ctx ->
-        case collapse do
-          true -> many_parser(parser, %{parsed_ctx | match: append_match(ctx.match, many_match.term)}, collapse)
-          false -> many_parser(parser, %{parsed_ctx | match: append_match(ctx.match, many_match)}, collapse)
+      %{:status => :ok, match: %{term: term} = many_match} = parsed_ctx ->
+        if term == nil do
+          many_parser(parser, %{parsed_ctx | match: ctx.match}, extract_terms)
+        else
+          if extract_terms do
+            many_parser(
+              parser,
+              %{parsed_ctx | match: append_match(ctx.match, many_match.term)},
+              extract_terms
+            )
+          else
+            many_parser(
+              parser,
+              %{parsed_ctx | match: append_match(ctx.match, many_match)},
+              extract_terms
+            )
+          end
         end
     end
   end

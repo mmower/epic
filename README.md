@@ -1,5 +1,7 @@
 # Epic
 
+Version: 0.2 (basic, working)
+
 Author: Matt Mower <matt@theartofnavigation.co.uk>
 
 ## Introduction
@@ -13,9 +15,11 @@ like:
     5/6
     7-8
 
-you might imagine building a combinator parser like
+you might imagine building a combinator parser like:
 
-    integer() |> operator() |> integer()
+    integer -> operator -> integer (conceptually)
+
+    sequence([integer(), operator(), integer()])
 
 where `integer` is a parser responsible for parsing digitals and `operator` is a parser
 responsible for parsing symbols like `+` and `*`.
@@ -48,50 +52,59 @@ For example to parse an input such as:
 
     and so on…
 
-with regular expressions would be unnecessarily complex and difficult. At this point you need a parser.
+You need a parser.
 
 Parser combinators, like Epic, allow for the "layering up" of simple parsers into more complex parsers. This
 helps to clarify intent. As well it makes it easy to transform parsed terms into more useful forms. An imagined
 form of parser combinator for the above input (ignoring whitespace issues) might look like:
 
-    game =
-      string("Game")
-      |> string("{"})
-      |> many(choice([attribute,act]))
-      |> string("}")
+  game =
+    sequence([
+      literal("Game"),
+      literal("{",
+      many(choice([attribute, act])),
+      literal("}")
+    ])
 
-    act =
-      string("Act")
-      |> id
-      |> string("{")
-      |> many(choice([attribute,scene]))
-      |> string("}")
+  act =
+   sequence([
+     literal("Act"),
+     literal("{"),
+     many(choice([attribute, scene])),
+     literal("}")
+   ])
+
+   scene =
+    sequence([
+      literal("Scene"),
+      literal("{}"),
+      many(choice[attribute, …]),
+      literal("}")
+      })
+    ])
 
     attribute =
-      string("@")
+      literal("@")
       |> identifier
-      |> string("=")
+      |> literal("=")
       |> value
 
     and so on…
 
-Epic provides a number of helpful low-level parsers like `string`, `many`, and `choice` which can be combined, DSL like, to form a more complex parser for your input grammar. Additionally it provides useful transformers
-that can convert parsed results into maps and records.
+Epic provides a number of helpful low-level parsers like `literal`, `sequence`, `many`, and `choice` which can be combined, DSL like, to form a more complex parser for your input grammar. Additionally it provides useful transformers that can convert parsed results into maps and records.
 
 Lastly, because Epic was created to parse a human authored format, some effort has been made to ensure that
 Epic parsers can be made to report human readbale error messages with useful positional information.
 
 ## Progress
 
-I've implemented some basic parsing primitives so you can parse strings as well as some of the utility
-parsers like `choice` and `many`. However there are a number of problems:
+I've implemented most of the basic parsing primitives so you can build a functional parser. However there are issues:
 
 ### Error handling
 
 It's a stated ambition of Epic that generated parsers provide decent, human understandable, error messages
-when things go wrong. However, at the moment, that remains an ambition.
-
-The parser automatically maintains good line/column information which is a start.
+when things go wrong. Epic tracks line & column information which is a start but this remains more of an
+ambition than actuality.
 
 ### chaining of parsers
 
@@ -100,11 +113,9 @@ In NimbleParsec you can write:
     string("{"}) |> identifier |> string("}") |> …
 
 because all the combinators take another combinator as the first parameter and "chain" them along collecting
-the results. I'm not quite sure how to implement this in Epic. In particular it's about how results get
-stored and passed about in the context. I think what I've done needs re-thinking.
+the results.
 
-My first approach to this problem has been to introduce the `sequence` parser which takes a list of
-parsers and applies them in turn. So you would write the above example as:
+I wasn't sure how to implement this (I found collecting results using this approach challenging) so I opted to be more explicit and introduce the `sequence` parser. So you would write the above example as:
 
     sequence([char(?{}), identifier(), char(?})])
 
@@ -148,14 +159,12 @@ Note that, in some cases, it still makes sense to chain parsers although I don't
 
 actually reads any worse.
 
-Under the hood `literal` is implemented using `sequence` and `char` by mapping characters of the string
+Under the hood `literal` is implemented using the `sequence` and `char` parsers by mapping characters of the string
 into equivalent char parsers strung together with sequence.
 
 ### ignoring unwanted input
 
-NimbleParsec has the `ignore` combinator that discards any results. Much like the chaining problem above I'm not yet clear how to implement this in Epic. I think it requires rethinking what I am doing about results. In particular mostly I am trying to build AST structures so maybe first class support for this will help.
-
-I am considering whether ignore could be implemented by a parser simply returns an empty match.
+NimbleParsec has the `ignore` combinator that discards any results. Likewise Epic has an `ignore` parser that returns a type of match that the `many` and `sequence` parsers will discard when collecting results.
 
 ### lookahead
 

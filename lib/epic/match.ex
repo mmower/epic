@@ -5,29 +5,39 @@ defmodule Epic.Match do
   """
   alias Epic.Position
 
-  defstruct [:term, :position, :label]
+  defstruct term: nil, position: nil, label: nil
 
+  @doc """
+  Given a Position return a new Match at that position to hold a list of sub-
+  matches.
+  """
   def list_match(%Position{} = position), do: %Epic.Match{term: [], position: position}
 
+  @doc """
+  Given a character and a Position, returns a Match for that character at that position
+  """
   def char_match(char, %Position{} = position), do: %Epic.Match{term: char, position: position}
 
-  def append_match(%Epic.Match{term: list} = match, new_match) when is_list(list) do
-    %{match | term: [new_match | list]}
+  @doc """
+  Given a Match with a list-based term and an item returns a new Match with the item
+  pre-pended to the list.
+  """
+  def append_match(%Epic.Match{term: terms} = match, new_match) when is_list(terms) do
+    %{match | term: [new_match | terms]}
   end
 
-  # @doc """
-  # Given a character and position returns a Match for that character at that position.
-  # """
-  # def char_match(char, %Position{} = position) do
-  #   %Epic.Match{term: char, position: position}
-  # end
+  @doc """
+  Returns a Match that should be ignored.
+  """
+  def ignore_match(), do: %Epic.Match{}
 
-  # @doc """
-  # Given a position returns a Match for the empty list at that position.
-  # """
-  # def list_match(%Position{} = position) do
-  #   %Epic.Match{term: [], position: position}
-  # end
+  @doc """
+  The natural way to build lists in Elixir is by pre-pending items hence we need a way
+  to reverse them to form a natural order when building up lists.
+  """
+  def terms_in_parsed_order(%Epic.Match{term: terms} = match) when is_list(terms) do
+    %{match | term: Enum.reverse(terms)}
+  end
 
   @doc """
   Given a Match with a term that can be converted into a string (principally a char or a
