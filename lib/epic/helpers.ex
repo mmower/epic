@@ -1,17 +1,22 @@
 defmodule Epic.Helpers do
   @moduledoc """
-  The Epic.Helpers module contains the utility parsers label/2, choice/1, many/1, satisfy/2,
-  transform/2, replace/2, map/2, collect/2.
+  The Epic.Helpers module contains structural parsers such as `many`, `choice`, and `sequence` and
+  utility parsers such as `ignore`, `label`, `transform`, `replace`, `map`, and `collect`.
   """
   alias Epic.{Context}
 
   import Epic.Match,
     only: [list_match: 1, append_match: 2, ignore_match: 0, terms_in_parsed_order: 1]
 
+
   @doc """
-  The label parser labels the current matching value.
+  The `label` combinator accepts a parser and a label string and returns a parser that calls the parser and, if it succeeds,
+  labels it match according to calls its parser and, if that parser succeeds, labels the match.
+
+  Example: label a phone number
+    phone = label(many(digit()),"phone")
   """
-  def label(parser, label) do
+  def label(parser, label) when is_function(parser) and is_binary(label) do
     fn %Context{} = ctx ->
       with %{status: :ok, match: match} = new_ctx <- parser.(ctx) do
         %{new_ctx | match: %{match | label: label}}
@@ -20,9 +25,14 @@ defmodule Epic.Helpers do
   end
 
   @doc """
-  The ignore parsers runs the parser it is given but ignores the results of that parser
+  The `ignore` parser calls its parser, but if the parser suceeds the match is replaced
+  by a sentinel that will be recognised by structural parsers such as `sequence` and `many`
+  causing them to ignore the match.
+
+  Example: match digits ignoring '-' separators
+    phone = many(choice([digit(),ignore(char(?-))]))
   """
-  def ignore(parser) do
+  def ignore(parser) when is_function(parser) do
     fn %Context{} = ctx ->
       with %{status: :ok} = new_ctx <- parser.(ctx) do
         %{new_ctx | match: ignore_match()}
@@ -31,18 +41,41 @@ defmodule Epic.Helpers do
   end
 
   @doc """
-  The exactly/2 parser requires the parser argument to match exactly n times
+  The `optional` combinator accepts a parser and returns a function that attempts to match the
+  parser on the input. If the input matches the match is returned otherwise the original context
+  is returned. Optional always succeeds.
   """
-  def times(parser, n) do
+  def optional(parser) when is_function(parser) do
+    fn %Context{} = ctx ->
+      %{status: status} = parsed_ctx = parser.(ctx)
+      if status == :ok do
+        parsed_ctx
+      else
+        %{ctx | status: :ok}
+      end
+    end
+  end
+
+  @doc """
+  The `times` parser calls its parser `n` times in a row.
+
+  Example: match a 4 digit year
+    year = times(digit(), 4)
+  """
+  def times(parser, n) when is_function(parser) and is_integer(n) do
     sequence(for _i <- 1..n, do: parser)
   end
 
   @doc """
+  The `sequence` parser accepts a list of parsers and applies each in turn. The Match returned
+  by `sequence` contains a list (either of Match or term items) of parsed items.
+
   The sequence parser takes a list of parsers and attempts to apply them in turn building a
   list-Match of results. The optional parameter extract_terms controls whether the sequence
   returns a list of Match structrs or a list of terms extracted from matches.
   """
-  def sequence(parsers, extract_terms \\ true) when is_list(parsers) do
+  def sequence(parsers, extract_terms \\ true)
+      when is_list(parsers) and is_boolean(extract_terms) do
     fn %Context{} = ctx ->
       sequence_parser(parsers, %{ctx | match: list_match(ctx.position)}, extract_terms)
     end
@@ -78,8 +111,12 @@ defmodule Epic.Helpers do
   end
 
   @doc """
-  The choice parser takes a list of parsers and returns a combinator which will try each
-  parser in turn to see if it can match the input.
+  The `choice` parser accepts a list of parsers and returns a parser that attempts to apply
+  each in turn. If a parser matches then `choice` succeeds with that match. If all parsers
+  fail to match then `choice` fails.
+
+  Example: parse a number or a letter
+    num_or_letter = choice([digit(), ascii_char()])
   """
   def choice(parsers) when is_list(parsers) do
     fn %Context{} = ctx ->
@@ -98,13 +135,14 @@ defmodule Epic.Helpers do
   end
 
   @doc """
-  The many parser takes a parser and returns a combinator that applies the parser in a greedy fashion
+  The `many` parser takes a parser and returns a combinator that applies the parser in a greedy fashion
   returning a match containing a (potentially empty) list of terms matched.
 
   Note that the many parser never fails and will return an empty list if it does not match.
   """
 
-  def many(parser, extract_terms \\ true) do
+  def many(parser, extract_terms \\ true)
+      when is_function(parser) and is_boolean(extract_terms) do
     fn %Context{} = ctx ->
       with %{status: :ok, match: match} = result_ctx <-
              many_parser(parser, %{ctx | match: list_match(ctx.position)}, extract_terms) do
@@ -155,7 +193,7 @@ defmodule Epic.Helpers do
   @doc """
   The flatten/1 parser takes a parser and "flattens" it results.
   """
-  def flatten(parser) do
+  def flatten(parser) when is_function(parser) do
     fn %Context{} = ctx ->
       with %Context{status: :ok, match: %{term: terms} = match} = new_ctx <- parser.(ctx) do
         %{new_ctx | match: %{match | term: List.flatten(terms)}}

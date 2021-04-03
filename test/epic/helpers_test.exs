@@ -45,7 +45,7 @@ defmodule Epic.HelpersTest do
   end
 
   test "transform match" do
-    parser = many(ascii_letter()) |> transform( fn term -> Enum.reverse(term) end)
+    parser = many(ascii_letter()) |> transform(fn term -> Enum.reverse(term) end)
     assert %{status: :ok, match: %{term: [?f, ?o, ?o]}} = parser.(string_ctx("oof"))
   end
 
@@ -76,7 +76,7 @@ defmodule Epic.HelpersTest do
 
     # Note that because of the use of sequence which returns a list we get
     # each digit in a list so '2' rather than ?2
-    assert %{status: :ok, match: %{term: [?1,['2','3','4','5']]}} = result
+    assert %{status: :ok, match: %{term: [?1, ['2', '3', '4', '5']]}} = result
   end
 
   test "parse sequence" do
@@ -85,7 +85,13 @@ defmodule Epic.HelpersTest do
   end
 
   test "parse sequence of choices" do
-    parser = sequence([choice([ascii_letter(), digit()]), choice([ascii_letter(), digit()]), choice([ascii_letter(), digit()])])
+    parser =
+      sequence([
+        choice([ascii_letter(), digit()]),
+        choice([ascii_letter(), digit()]),
+        choice([ascii_letter(), digit()])
+      ])
+
     assert %{status: :ok, match: %{term: [?f, ?1, ?o]}} = parser.(string_ctx("f1o"))
     assert %{status: :ok, match: %{term: [?f, ?o, ?o]}} = parser.(string_ctx("foo"))
     assert %{status: :ok, match: %{term: [?1, ?2, ?3]}} = parser.(string_ctx("123"))
@@ -96,7 +102,9 @@ defmodule Epic.HelpersTest do
     # parser appends the %Match{} or the raw term
     parser = sequence([digit(), digit(), digit()], false)
     result = parser.(string_ctx("123"))
-    assert %{status: :ok, match: %{term: [%Match{term: ?1}, %Match{term: ?2}, %Match{term: ?3}]}} = result
+
+    assert %{status: :ok, match: %{term: [%Match{term: ?1}, %Match{term: ?2}, %Match{term: ?3}]}} =
+             result
   end
 
   test "parsing sequence (flattened)" do
