@@ -5,8 +5,6 @@ defmodule Epic.HelpersTest do
   import Epic.Helpers
   import Epic.Context
 
-  alias Epic.Match
-
   test "test choice fails on empty input" do
     parser = choice([ascii_letter(), digit()])
     assert %{status: :error} = parser.(string_ctx(""))
@@ -95,16 +93,6 @@ defmodule Epic.HelpersTest do
     assert %{status: :ok, match: %{term: [?f, ?1, ?o]}} = parser.(string_ctx("f1o"))
     assert %{status: :ok, match: %{term: [?f, ?o, ?o]}} = parser.(string_ctx("foo"))
     assert %{status: :ok, match: %{term: [?1, ?2, ?3]}} = parser.(string_ctx("123"))
-  end
-
-  test "parse sequence returning matches" do
-    # The sequence parser takes an optional third argument that controls whether the
-    # parser appends the %Match{} or the raw term
-    parser = sequence([digit(), digit(), digit()], false)
-    result = parser.(string_ctx("123"))
-
-    assert %{status: :ok, match: %{term: [%Match{term: ?1}, %Match{term: ?2}, %Match{term: ?3}]}} =
-             result
   end
 
   test "parsing sequence (flattened)" do
